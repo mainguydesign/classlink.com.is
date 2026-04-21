@@ -2,7 +2,8 @@
 <html>
 <head>
 <title>History Project</title>
-<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
+
+<link id="dynamic-favicon" rel="icon" href="">
 
 <style>
 body{
@@ -11,7 +12,7 @@ font-family:Arial;
 background:#111;
 color:white;
 overflow:hidden;
-cursor:url("https://cdn-icons-png.flaticon.com/512/854/854878.png"),auto;
+cursor:default;
 }
 
 /* LOGIN */
@@ -20,8 +21,8 @@ position:fixed;
 width:100%;
 height:100%;
 display:flex;
-justify-content:center;
 align-items:center;
+justify-content:center;
 flex-direction:column;
 }
 #login{background:black;}
@@ -39,56 +40,49 @@ height:40px;
 background:#000;
 display:flex;
 align-items:center;
-padding:5px;
+gap:5px;
 }
 
-/* ICON */
+/* ICONS */
 .icon{
+display:inline-block;
 margin:10px;
 cursor:pointer;
-display:inline-block;
 position:relative;
 }
 
-/* WINDOWS */
+/* WINDOW */
 .window{
 position:absolute;
-top:100px;
-left:100px;
+top:120px;
+left:120px;
 width:500px;
 height:350px;
 background:#222;
 display:none;
-resize:both;
+border:1px solid #444;
 overflow:hidden;
-border:1px solid #555;
+resize:both;
 }
 
+/* HEADER */
 .header{
 background:#333;
 padding:5px;
 cursor:grab;
 }
 
+/* CLOSE */
 .close{
 float:right;
-cursor:pointer;
 color:red;
-}
-
-/* BROWSER */
-#browserBar{
-background:#111;
-padding:5px;
-}
-#url{
-width:80%;
+cursor:pointer;
 }
 
 /* IFRAME */
 iframe{
 width:100%;
-height:calc(100% - 60px);
+height:calc(100% - 70px);
 border:none;
 }
 
@@ -103,12 +97,22 @@ right:0;
 display:none;
 }
 
+/* PIN MENU */
 #pinMenu{
 position:absolute;
 background:#222;
-display:none;
 padding:5px;
+display:none;
 }
+
+/* CHAT */
+#chatBox{
+height:250px;
+overflow:auto;
+padding:5px;
+background:#111;
+}
+
 </style>
 </head>
 
@@ -122,7 +126,7 @@ padding:5px;
 
 <!-- LOCK -->
 <div id="locked">
-<h2>ACCESS DENIED</h2>
+<h2>LOCKED</h2>
 <div id="timer"></div>
 <input id="recovery" placeholder="recovery">
 </div>
@@ -131,18 +135,19 @@ padding:5px;
 <div id="desktop">
 
 <div class="icon" data-app="browser" onclick="openApp('browser')" onmouseenter="hoverApp(event,this)">
-🌐 Browser
-<div class="pin-dot"></div>
+🌐 Browser<div class="pin-dot"></div>
 </div>
 
 <div class="icon" data-app="games" onclick="openApp('games')" onmouseenter="hoverApp(event,this)">
-🎮 Games
-<div class="pin-dot"></div>
+🎮 Games<div class="pin-dot"></div>
 </div>
 
 <div class="icon" data-app="settings" onclick="openApp('settings')" onmouseenter="hoverApp(event,this)">
-⚙️ Settings
-<div class="pin-dot"></div>
+⚙️ Settings<div class="pin-dot"></div>
+</div>
+
+<div class="icon" data-app="assistant" onclick="openApp('assistant')" onmouseenter="hoverApp(event,this)">
+🤖 AI<div class="pin-dot"></div>
 </div>
 
 </div>
@@ -156,10 +161,8 @@ padding:5px;
 Browser <span class="close" onclick="closeApp('browser')">X</span>
 </div>
 
-<div id="browserBar">
 <input id="url" placeholder="enter url">
 <button onclick="go()">Go</button>
-</div>
 
 <iframe id="web"></iframe>
 </div>
@@ -172,7 +175,8 @@ Games <span class="close" onclick="closeApp('games')">X</span>
 
 <div onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
 <div onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
-<div onclick="openGame('https://www.roblox.com')">Roblox</div>
+<div onclick="openGame('https://www.roblox.com')">Roblox (external)</div>
+
 </div>
 
 <!-- SETTINGS -->
@@ -184,6 +188,18 @@ Settings <span class="close" onclick="closeApp('settings')">X</span>
 <button onclick="theme('dark')">Dark</button>
 <button onclick="theme('blue')">Blue</button>
 <button onclick="theme('red')">Red</button>
+
+</div>
+
+<!-- AI ASSISTANT -->
+<div class="window" id="assistant">
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
+AI Assistant <span class="close" onclick="closeApp('assistant')">X</span>
+</div>
+
+<div id="chatBox"></div>
+<input id="chatInput" placeholder="Ask...">
+<button onclick="sendMsg()">Send</button>
 </div>
 
 <!-- PIN MENU -->
@@ -197,8 +213,9 @@ Pin app?<br>
 
 /* PASSWORD */
 const correct="superiorsiteowner";
-const recoveryPass="superiorlakeemerald";
-let attempts=0,lockUntil=0;
+const recovery="superiorlakeemerald";
+let attempts=0;
+let lockUntil=0;
 
 pass.onkeydown=e=>{
 if(e.key==="Enter"){
@@ -207,9 +224,12 @@ if(Date.now()<lockUntil)return lock();
 if(pass.value===correct){
 login.style.display="none";
 desktop.style.display="block";
+setFavicon("white");
 }else{
 attempts++;
-msg.textContent="Wrong "+attempts;
+msg.textContent="Wrong";
+
+setFavicon("yellow");
 
 if(attempts>=5){
 lockUntil=Date.now()+600000;
@@ -223,26 +243,29 @@ pass.value="";
 function lock(){
 login.style.display="none";
 locked.style.display="flex";
+setFavicon("red");
 
-function t(){
+function tick(){
 let r=lockUntil-Date.now();
 if(r>0){
 timer.textContent=Math.ceil(r/1000)+"s";
-setTimeout(t,1000);
+setTimeout(tick,1000);
 }else{
 locked.style.display="none";
 login.style.display="flex";
 attempts=0;
+setFavicon("white");
 }
 }
-t();
+tick();
 }
 
 recovery.onkeydown=e=>{
-if(e.key==="Enter" && recovery.value===recoveryPass){
+if(e.key==="Enter" && recovery.value===recovery){
 lockUntil=0;
 locked.style.display="none";
 login.style.display="flex";
+setFavicon("white");
 }
 };
 
@@ -254,16 +277,19 @@ w.style.display="block";
 w.style.zIndex=++z;
 addTask(id);
 }
+
 function closeApp(id){
 document.getElementById(id).style.display="none";
 }
 
 /* TASKBAR */
 function addTask(id){
-let btn=document.createElement("button");
-btn.textContent=id;
-btn.onclick=()=>openApp(id);
-taskbar.appendChild(btn);
+if([...taskbar.children].find(b=>b.textContent===id))return;
+
+let b=document.createElement("button");
+b.textContent=id;
+b.onclick=()=>openApp(id);
+taskbar.appendChild(b);
 }
 
 /* DRAG */
@@ -273,6 +299,7 @@ drag=el;
 ox=e.clientX-el.offsetLeft;
 oy=e.clientY-el.offsetTop;
 }
+
 document.onmousemove=e=>{
 if(drag){
 drag.style.left=(e.clientX-ox)+"px";
@@ -283,9 +310,7 @@ document.onmouseup=()=>drag=null;
 
 /* BROWSER */
 function go(){
-let u=url.value;
-if(!u.startsWith("http")) u="https://"+u;
-web.src=u;
+web.src=url.value.startsWith("http")?url.value:"https://"+url.value;
 }
 
 function openGame(u){
@@ -293,23 +318,39 @@ openApp("browser");
 web.src=u;
 }
 
-/* THEMES */
+/* THEME */
 function theme(t){
-if(t==="dark")document.body.style.background="#111";
-if(t==="blue")document.body.style.background="#0a1a3a";
-if(t==="red")document.body.style.background="#3a0a0a";
+document.body.style.background =
+t==="dark"?"#111":
+t==="blue"?"#0a1a3a":"#3a0a0a";
+}
+
+/* AI */
+function sendMsg(){
+let v=chatInput.value;
+chatBox.innerHTML+="<div>You: "+v+"</div>";
+
+let r="I’m a simple assistant.";
+if(v.includes("game"))r="Open Games app.";
+if(v.includes("hello"))r="Hello.";
+
+setTimeout(()=>{
+chatBox.innerHTML+="<div>AI: "+r+"</div>";
+},300);
+
+chatInput.value="";
 }
 
 /* PIN */
-let lastHover={},current=null;
+let last={},current=null;
 function hoverApp(e,el){
 let app=el.dataset.app;
 let now=Date.now();
 
-if(lastHover[app] && now-lastHover[app]<10000)return;
+if(last[app] && now-last[app]<10000)return;
 
 current=app;
-lastHover[app]=now;
+last[app]=now;
 
 pinMenu.style.display="block";
 pinMenu.style.left=e.pageX+"px";
@@ -319,12 +360,20 @@ setTimeout(()=>pinMenu.style.display="none",2000);
 }
 
 function pin(v){
-let dot=document.querySelector(`[data-app="${current}"] .pin-dot`);
-dot.style.display=v?"block":"none";
+document.querySelector(`[data-app="${current}"] .pin-dot`).style.display=v?"block":"none";
 pinMenu.style.display="none";
 }
 
-document.onclick=()=>pinMenu.style.display="none";
+/* FAVICON */
+function setFavicon(c){
+let svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
+<path fill='${c}' d='M2 12l19-9-7 19-2-8-10-2z'/>
+</svg>`;
+document.getElementById("dynamic-favicon").href =
+"data:image/svg+xml,"+encodeURIComponent(svg);
+}
+
+setFavicon("white");
 
 </script>
 
