@@ -2,8 +2,7 @@
 <html>
 <head>
 <title>History Project</title>
-
-<link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...">
+<link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/3/3c/Paper_plane.svg">
 
 <style>
 body{
@@ -12,9 +11,7 @@ font-family:Arial;
 background:#111;
 color:white;
 overflow:hidden;
-
-/* ✈️ cursor */
-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M2 12l19-9-7 19-2-8-10-2z'/%3E%3C/svg%3E") 0 0, auto;
+cursor:url("https://upload.wikimedia.org/wikipedia/commons/3/3c/Paper_plane.svg"),auto;
 }
 
 /* LOGIN */
@@ -25,23 +22,34 @@ height:100%;
 display:flex;
 justify-content:center;
 align-items:center;
+flex-direction:column;
 background:black;
+}
+
+/* LOCK */
+#locked{
+display:none;
+position:fixed;
+width:100%;
+height:100%;
+background:darkred;
+color:white;
+justify-content:center;
+align-items:center;
+flex-direction:column;
 }
 
 /* DESKTOP */
 #desktop{
 display:none;
-height:100vh;
 padding:20px;
 }
 
 /* ICON */
 .icon{
-width:90px;
 display:inline-block;
-text-align:center;
-cursor:pointer;
 margin:10px;
+cursor:pointer;
 position:relative;
 }
 
@@ -50,52 +58,60 @@ position:relative;
 position:absolute;
 top:120px;
 left:120px;
-width:420px;
+width:500px;
+height:350px;
 background:#222;
-border:1px solid #444;
+border:1px solid #555;
 display:none;
+resize:both;
+overflow:hidden;
 }
 
-.window-header{
+/* HEADER */
+.header{
 background:#333;
-padding:6px;
+padding:5px;
 cursor:grab;
 }
 
-/* CLOSE */
+/* CLOSE BUTTON */
 .close{
 float:right;
 cursor:pointer;
+color:red;
 }
 
 /* GAME LIST */
-#gameList a{
-display:block;
+#gameList div{
 padding:5px;
+cursor:pointer;
 color:lightblue;
 }
 
-/* PIN DOT */
+/* IFRAME */
+iframe{
+width:100%;
+height:calc(100% - 30px);
+border:none;
+}
+
+/* PIN */
 .pin-dot{
-position:absolute;
-top:5px;
-right:5px;
 width:10px;
 height:10px;
-border-radius:50%;
 background:purple;
+position:absolute;
+top:0;
+right:0;
 display:none;
-cursor:pointer;
 }
 
 /* PIN MENU */
-.pin-menu{
+#pinMenu{
 position:absolute;
 background:#222;
-border:1px solid #555;
-padding:6px;
+padding:5px;
 display:none;
-z-index:9999;
 }
 </style>
 </head>
@@ -105,6 +121,14 @@ z-index:9999;
 <!-- LOGIN -->
 <div id="login">
 <input id="pass" placeholder="password">
+<div id="msg"></div>
+</div>
+
+<!-- LOCK -->
+<div id="locked">
+<h2>ACCESS DENIED</h2>
+<div id="timer"></div>
+<input id="recovery" placeholder="recovery">
 </div>
 
 <!-- DESKTOP -->
@@ -112,115 +136,127 @@ z-index:9999;
 
 <div class="icon" data-app="games" onclick="openApp('games')" onmouseenter="hoverApp(event,this)">
 🎮 Games
-<div class="pin-dot" onclick="togglePin(event,'games')"></div>
+<div class="pin-dot"></div>
 </div>
 
 <div class="icon" data-app="settings" onclick="openApp('settings')" onmouseenter="hoverApp(event,this)">
 ⚙️ Settings
-<div class="pin-dot" onclick="togglePin(event,'settings')"></div>
+<div class="pin-dot"></div>
 </div>
 
 </div>
 
-<!-- GAME -->
+<!-- GAME HUB -->
 <div class="window" id="games">
-<div class="window-header" onmousedown="dragStart(event,this.parentElement)">
-Game Hub <span class="close" onclick="closeApp('games')">X</span>
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
+Games <span class="close" onclick="closeApp('games')">X</span>
 </div>
-
-<div style="padding:10px;">
-<input id="search" placeholder="search..." style="width:100%">
 <div id="gameList"></div>
 </div>
+
+<!-- GAME VIEWER -->
+<div class="window" id="viewer">
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
+Game <span class="close" onclick="closeApp('viewer')">X</span>
+</div>
+<iframe id="frame"></iframe>
 </div>
 
 <!-- SETTINGS -->
 <div class="window" id="settings">
-<div class="window-header" onmousedown="dragStart(event,this.parentElement)">
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
 Settings <span class="close" onclick="closeApp('settings')">X</span>
 </div>
 
-<div style="padding:10px;">
 <button onclick="theme('dark')">Dark</button>
 <button onclick="theme('blue')">Blue</button>
 <button onclick="theme('red')">Red</button>
 </div>
-</div>
 
 <!-- PIN MENU -->
-<div id="pinMenu" class="pin-menu">
+<div id="pinMenu">
 Pin app?
 <br>
-<button onclick="confirmPin(true)">Yes</button>
-<button onclick="confirmPin(false)">No</button>
+<button onclick="pin(true)">Yes</button>
+<button onclick="pin(false)">No</button>
 </div>
 
 <script>
 
-/* LOGIN */
-document.getElementById("pass").addEventListener("keydown",e=>{
-if(e.key==="Enter" && e.target.value==="superiorsiteowner"){
-start();
-}
-});
+/* PASSWORD */
+const correct="superiorsiteowner";
+const recoveryPass="superiorlakeemerald";
+let attempts=0;
+let lockUntil=0;
 
-function start(){
+pass.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+
+if(Date.now()<lockUntil)return lock();
+
+if(pass.value===correct){
 login.style.display="none";
 desktop.style.display="block";
 renderGames();
-updatePins();
+}else{
+attempts++;
+msg.textContent="Wrong ("+attempts+"/5)";
+if(attempts>=5){
+lockUntil=Date.now()+600000;
+lock();
 }
+}
+pass.value="";
+}
+});
+
+/* LOCK */
+function lock(){
+login.style.display="none";
+locked.style.display="flex";
+
+function tick(){
+let t=lockUntil-Date.now();
+if(t>0){
+timer.textContent=Math.ceil(t/1000)+"s";
+setTimeout(tick,1000);
+}else{
+locked.style.display="none";
+login.style.display="flex";
+attempts=0;
+}
+}
+tick();
+}
+
+/* RECOVERY */
+recovery.addEventListener("keydown",e=>{
+if(e.key==="Enter" && recovery.value===recoveryPass){
+lockUntil=0;
+locked.style.display="none";
+login.style.display="flex";
+}
+});
 
 /* WINDOWS */
 let z=10;
-
 function openApp(id){
 let w=document.getElementById(id);
 w.style.display="block";
 w.style.zIndex=++z;
 }
-
 function closeApp(id){
 document.getElementById(id).style.display="none";
 }
 
-/* GAMES */
-const games=[
-{name:"Minecraft",url:"#"},
-{name:"Roblox",url:"#"},
-{name:"Terraria",url:"#"},
-{name:"FNAF",url:"#"}
-];
-
-function renderGames(){
-let box=document.getElementById("gameList");
-let s=document.getElementById("search").value.toLowerCase();
-box.innerHTML="";
-
-games.filter(g=>g.name.toLowerCase().includes(s))
-.forEach(g=>{
-let a=document.createElement("a");
-a.textContent=g.name;
-a.href=g.url;
-a.target="_blank";
-box.appendChild(a);
-});
-}
-
-document.addEventListener("input",e=>{
-if(e.target.id==="search")renderGames();
-});
-
 /* DRAG */
-let drag=null,ox=0,oy=0;
-
+let drag=null,ox,oy;
 function dragStart(e,el){
 drag=el;
 ox=e.clientX-el.offsetLeft;
 oy=e.clientY-el.offsetTop;
 el.style.zIndex=++z;
 }
-
 document.addEventListener("mousemove",e=>{
 if(drag){
 drag.style.left=(e.clientX-ox)+"px";
@@ -229,6 +265,26 @@ drag.style.top=(e.clientY-oy)+"px";
 });
 document.addEventListener("mouseup",()=>drag=null);
 
+/* GAMES → OPEN IN IFRAME */
+const games=[
+{name:"Minecraft Classic",url:"https://classic.minecraft.net"},
+{name:"Google Quick Draw",url:"https://quickdraw.withgoogle.com"},
+{name:"2048",url:"https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html"}
+];
+
+function renderGames(){
+gameList.innerHTML="";
+games.forEach(g=>{
+let div=document.createElement("div");
+div.textContent=g.name;
+div.onclick=()=>{
+frame.src=g.url;
+openApp("viewer");
+};
+gameList.appendChild(div);
+});
+}
+
 /* THEMES */
 function theme(t){
 if(t==="dark")document.body.style.background="#111";
@@ -236,57 +292,29 @@ if(t==="blue")document.body.style.background="#0a1a3a";
 if(t==="red")document.body.style.background="#3a0a0a";
 }
 
-/* PIN SYSTEM (FIXED) */
-let pinned=JSON.parse(localStorage.getItem("pinned"))||{};
-let current=null;
-let hoverCooldown={};
+/* PIN SYSTEM */
+let lastHover={},current=null;
 
 function hoverApp(e,el){
 let app=el.dataset.app;
 let now=Date.now();
 
-if(!hoverCooldown[app] || now-hoverCooldown[app]>10000){
+if(!lastHover[app]||now-lastHover[app]>10000){
 current=app;
-
-let m=document.getElementById("pinMenu");
-m.style.display="block";
-m.style.left=e.pageX+"px";
-m.style.top=e.pageY+"px";
-
-hoverCooldown[app]=now;
+pinMenu.style.display="block";
+pinMenu.style.left=e.pageX+"px";
+pinMenu.style.top=e.pageY+"px";
+lastHover[app]=now;
 }
 }
 
-function confirmPin(val){
-if(!current)return;
-
-pinned[current]=val;
-localStorage.setItem("pinned",JSON.stringify(pinned));
-updatePins();
-
+function pin(val){
+let dot=document.querySelector(`[data-app="${current}"] .pin-dot`);
+dot.style.display=val?"block":"none";
 pinMenu.style.display="none";
 }
 
-function togglePin(e,app){
-e.stopPropagation();
-pinned[app]=!pinned[app];
-localStorage.setItem("pinned",JSON.stringify(pinned));
-updatePins();
-}
-
-function updatePins(){
-document.querySelectorAll(".icon").forEach(i=>{
-let app=i.dataset.app;
-let dot=i.querySelector(".pin-dot");
-
-/* ✅ FIXED LINE */
-dot.style.display = pinned[app] ? "block" : "none";
-});
-}
-
-document.addEventListener("click",()=>{
-pinMenu.style.display="none";
-});
+document.addEventListener("click",()=>pinMenu.style.display="none");
 
 </script>
 
