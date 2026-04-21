@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini OS Fixed</title>
+<title>History Project</title>
+
+<link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...">
 
 <style>
 body{
@@ -11,6 +12,17 @@ font-family:Arial;
 background:#111;
 color:white;
 overflow:hidden;
+}
+
+/* LOGIN */
+#login{
+position:fixed;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+background:black;
 }
 
 /* DESKTOP */
@@ -49,17 +61,9 @@ cursor:grab;
 user-select:none;
 }
 
-/* TASKBAR */
-#taskbar{
-position:fixed;
-bottom:0;
-width:100%;
-height:40px;
-background:#1a1a1a;
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:0 10px;
+.close{
+float:right;
+cursor:pointer;
 }
 
 /* GAME LIST */
@@ -103,15 +107,17 @@ color:white;
 border:none;
 }
 
-/* LOGIN */
-#login{
+/* TASKBAR */
+#taskbar{
 position:fixed;
+bottom:0;
 width:100%;
-height:100%;
+height:40px;
+background:#1a1a1a;
 display:flex;
-justify-content:center;
+justify-content:space-between;
 align-items:center;
-background:black;
+padding:0 10px;
 }
 </style>
 </head>
@@ -126,12 +132,12 @@ background:black;
 <!-- DESKTOP -->
 <div id="desktop">
 
-<div class="icon" data-app="games" onclick="openApp('games')" onmouseenter="showPinMenu(event,this)">
+<div class="icon" data-app="games" onclick="openApp('games')" onmouseenter="hoverApp(event,this)">
 🎮 Games
 <div class="pin-dot" onclick="togglePin(event,'games')"></div>
 </div>
 
-<div class="icon" data-app="settings" onclick="openApp('settings')" onmouseenter="showPinMenu(event,this)">
+<div class="icon" data-app="settings" onclick="openApp('settings')" onmouseenter="hoverApp(event,this)">
 ⚙️ Settings
 <div class="pin-dot" onclick="togglePin(event,'settings')"></div>
 </div>
@@ -140,20 +146,20 @@ background:black;
 
 <!-- GAME HUB -->
 <div class="window" id="games">
-<div class="window-header" onmousedown="startDrag(event,this.parentElement)">
-🎮 Game Hub <span onclick="closeApp('games')" style="float:right;cursor:pointer;">X</span>
+<div class="window-header" onmousedown="dragStart(event,this.parentElement)">
+🎮 Game Hub <span class="close" onclick="closeApp('games')">X</span>
 </div>
 
 <div style="padding:10px;">
-<input id="search" placeholder="search games..." style="width:100%;padding:5px;">
-<div id="gameList" style="margin-top:10px;"></div>
+<input id="search" placeholder="search games..." style="width:100%">
+<div id="gameList"></div>
 </div>
 </div>
 
 <!-- SETTINGS -->
 <div class="window" id="settings">
-<div class="window-header" onmousedown="startDrag(event,this.parentElement)">
-⚙️ Settings <span onclick="closeApp('settings')" style="float:right;cursor:pointer;">X</span>
+<div class="window-header" onmousedown="dragStart(event,this.parentElement)">
+⚙️ Settings <span class="close" onclick="closeApp('settings')">X</span>
 </div>
 
 <div style="padding:10px;">
@@ -166,7 +172,7 @@ background:black;
 <!-- TASKBAR -->
 <div id="taskbar">
 <div>Start</div>
-<div>Mini OS</div>
+<div>History Project</div>
 </div>
 
 <!-- PIN MENU -->
@@ -197,9 +203,7 @@ renderGames();
 function openApp(id){
 let w=document.getElementById(id);
 w.style.display="block";
-
-/* FIX: always bring to front */
-w.style.zIndex=++zIndex;
+w.style.zIndex=++z;
 }
 function closeApp(id){
 document.getElementById(id).style.display="none";
@@ -210,17 +214,17 @@ const games=[
 {name:"Minecraft",url:"#"},
 {name:"Roblox",url:"#"},
 {name:"Oregon Trail",url:"#"},
-{name:"Terraria",url:"#"}
+{name:"Terraria",url:"#"},
+{name:"FNAF",url:"#"}
 ];
 
 function renderGames(){
 let box=document.getElementById("gameList");
-let s=(document.getElementById("search")||{}).value?.toLowerCase()||"";
+let s=document.getElementById("search").value.toLowerCase();
 
 box.innerHTML="";
 
-games
-.filter(g=>g.name.toLowerCase().includes(s))
+games.filter(g=>g.name.toLowerCase().includes(s))
 .forEach(g=>{
 let a=document.createElement("a");
 a.href=g.url;
@@ -230,29 +234,28 @@ box.appendChild(a);
 });
 }
 
-/* SEARCH FIX */
+/* SEARCH */
 document.addEventListener("input",e=>{
 if(e.target.id==="search")renderGames();
 });
 
-/* DRAG FIX (IMPORTANT) */
-let drag=null,offsetX=0,offsetY=0;
+/* DRAG FIX */
+let drag=null,ox=0,oy=0;
 
-function startDrag(e,el){
+function dragStart(e,el){
 drag=el;
-offsetX=e.clientX-el.offsetLeft;
-offsetY=e.clientY-el.offsetTop;
+ox=e.clientX-el.offsetLeft;
+oy=e.clientY-el.offsetTop;
 el.style.position="absolute";
-el.style.zIndex=++zIndex;
+el.style.zIndex=++z;
 }
 
 document.addEventListener("mousemove",e=>{
 if(drag){
-drag.style.left=(e.clientX-offsetX)+"px";
-drag.style.top=(e.clientY-offsetY)+"px";
+drag.style.left=(e.clientX-ox)+"px";
+drag.style.top=(e.clientY-oy)+"px";
 }
 });
-
 document.addEventListener("mouseup",()=>drag=null);
 
 /* THEMES */
@@ -266,18 +269,31 @@ if(t==="red")document.body.style.background="#3a0a0a";
 let pinned=JSON.parse(localStorage.getItem("pinned"))||{};
 let current=null;
 
-function showPinMenu(e,el){
-current=el.dataset.app;
+/* 🔥 COOLDOWN SYSTEM (10s hover delay) */
+let hoverCooldown={};
+
+function hoverApp(e,el){
+let app=el.dataset.app;
+let now=Date.now();
+
+if(!hoverCooldown[app] || now-hoverCooldown[app]>10000){
+current=app;
+
 let m=document.getElementById("pinMenu");
 m.style.display="block";
 m.style.left=e.pageX+"px";
 m.style.top=e.pageY+"px";
+
+hoverCooldown[app]=now;
+}
 }
 
 function confirmPin(val){
 if(!current)return;
+
 pinned[current]=val;
 localStorage.setItem("pinned",JSON.stringify(pinned));
+
 updatePins();
 document.getElementById("pinMenu").style.display="none";
 }
@@ -289,21 +305,21 @@ localStorage.setItem("pinned",JSON.stringify(pinned));
 updatePins();
 }
 
+/* UPDATE DOTS */
 function updatePins(){
 document.querySelectorAll(".icon").forEach(i=>{
 let app=i.dataset.app;
 let dot=i.querySelector(".pin-dot");
-if(dot) dot.style.display=pinned[app]?"block":"none";
+dot.style.display=pinned[app]?"block":"none";
 });
 }
 
-/* CLOSE PIN MENU */
+/* CLOSE MENU */
 document.addEventListener("click",()=>{
 document.getElementById("pinMenu").style.display="none";
 });
 
-/* Z INDEX FIX */
-let zIndex=10;
+let z=10;
 
 </script>
 
