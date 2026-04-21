@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal OS Ultimate</title>
+
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:black;
+    color:white;
+    transition:0.3s;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+    position:fixed;
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    opacity:0;
+    pointer-events:none;
+    transition:0.4s;
+}
+
+.active {
+    opacity:1;
+    pointer-events:auto;
+}
+
+#home { background:#111; }
+#lockscreen { background:black; }
+#lockedScreen { background:darkred; }
+#overrideScreen { background:#c8facc; color:#0a3d1a; }
+
+/* ===== DESKTOP ===== */
+#desktop {
+    display:none;
+    height:100vh;
+    padding:20px;
+    padding-bottom:60px;
+}
+
+.icon {
+    width:90px;
+    text-align:center;
+    margin:10px;
+    cursor:pointer;
+    display:inline-block;
+}
+.icon div { font-size:40px; }
+
+/* ===== WINDOWS ===== */
+.window {
+    position:absolute;
+    top:120px;
+    left:120px;
+    width:450px;
+    background:#222;
+    border:1px solid #555;
+    display:none;
+}
+
+.window-header {
+    background:#333;
+    padding:6px;
+    cursor:move;
+}
+
+.close-btn {
+    float:right;
+    cursor:pointer;
+}
+
+/* ===== TASKBAR ===== */
+#taskbar {
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:42px;
+    background:#1a1a1a;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 10px;
+    border-top:1px solid #333;
+}
+
+#taskIcons {
+    display:flex;
+    gap:15px;
+    cursor:pointer;
+}
+
+#clock { font-size:14px; }
+
+/* ===== RECOVERY ===== */
+#recoveryBox {
+    position:fixed;
+    bottom:10px;
+    right:10px;
+    display:none;
+}
+
+/* ===== GATE ANIMATION ===== */
+#gateTransition {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:9999;
+}
+
+.gate {
+    position:absolute;
+    width:50%;
+    height:100%;
+    background:black;
+    top:0;
+}
+
+.gate.left { left:0; }
+.gate.right { right:0; }
+
+.open .gate.left {
+    animation: openLeft 1.2s forwards ease;
+}
+
+.open .gate.right {
+    animation: openRight 1.2s forwards ease;
+}
+
+@keyframes openLeft {
+    0% { transform:translateX(0); }
+    100% { transform:translateX(-100%); }
+}
+
+@keyframes openRight {
+    0% { transform:translateX(0); }
+    100% { transform:translateX(100%); }
+}
+
+/* ===== THEMES ===== */
+body.glass {
+    background:linear-gradient(#111,#222);
+}
+
+body.darkglass {
+    background:radial-gradient(circle,#000,#111);
+}
+
+body.redbrick {
+    background:#3b0a0a;
+}
+
+body.glass .window {
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+}
+
+body.darkglass .window {
+    background:rgba(0,0,0,0.6);
+    backdrop-filter:blur(12px);
+}
+
+body.redbrick .window {
+    background:#5a1010;
+}
+
+/* SETTINGS BUTTONS */
+button {
+    margin:5px;
+    padding:8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+<h1>Welcome</h1>
+<input id="homeSearch" placeholder="Search..." style="padding:10px;width:300px;">
+</div>
+
+<!-- LOGIN -->
+<div id="lockscreen" class="screen">
+<input id="password" placeholder="Enter password">
+<div id="message"></div>
+</div>
+
+<!-- LOCKED -->
+<div id="lockedScreen" class="screen">
+<div>ACCESS DENIED</div>
+<div id="timer"></div>
+</div>
+
+<!-- OVERRIDE -->
+<div id="overrideScreen" class="screen">
+DEFENSE MECHANISM DEACTIVATED
+</div>
+
+<!-- RECOVERY -->
+<div id="recoveryBox">
+<input id="recoveryPassword" placeholder="recovery">
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop">
+
+<div class="icon" onclick="openApp('gamesWin')">
+<div>🎮</div>
+Games
+</div>
+
+<div class="icon" onclick="openApp('settingsWin')">
+<div>⚙️</div>
+Settings
+</div>
+
+</div>
+
+<!-- GAME HUB -->
+<div class="window" id="gamesWin">
+<div class="window-header">
+Game Hub <span class="close-btn" onclick="closeApp('gamesWin')">X</span>
+</div>
+<div id="gameGrid" style="padding:10px;"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="window" id="settingsWin">
+<div class="window-header">
+Settings <span class="close-btn" onclick="closeApp('settingsWin')">X</span>
+</div>
+
+<h3 style="padding:10px;">Theme</h3>
+
+<button onclick="setTheme('glass')">🌫 Glass</button>
+<button onclick="setTheme('darkglass')">🌑 Dark Glass</button>
+<button onclick="setTheme('redbrick')">🧱 Red Brick</button>
+
+</div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+<div>🟦 Start</div>
+
+<div id="taskIcons">
+<div onclick="openApp('gamesWin')">🎮</div>
+<div onclick="openApp('settingsWin')">⚙️</div>
+</div>
+
+<div id="clock"></div>
+</div>
+
+<!-- GATE -->
+<div id="gateTransition">
+<div class="gate left"></div>
+<div class="gate right"></div>
+</div>
+
+<script>
+
+/* ===== LOGIN ===== */
+const correctPassword="superiorsiteowner";
+const recoveryPassword="superiorlakeemerald";
+
+let attempts=0;
+let lockUntil=0;
+let lockInterval;
+
+/* HOME */
+document.getElementById("homeSearch").addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+document.getElementById("home").classList.remove("active");
+document.getElementById("lockscreen").classList.add("active");
+}
+});
+
+/* LOGIN */
+document.getElementById("password").addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+
+if(Date.now()<lockUntil){startLock();return;}
+
+if(e.target.value===correctPassword){
+startGateTransition();
+}else{
+attempts++;
+if(attempts>=5){
+lockUntil=Date.now()+600000;
+startLock();
+}else{
+document.getElementById("message").innerText="Wrong ("+attempts+"/5)";
+}
+}
+
+e.target.value="";
+}
+});
+
+/* GATE OPEN */
+function startGateTransition(){
+
+const gate=document.getElementById("gateTransition");
+
+document.getElementById("lockscreen").classList.remove("active");
+document.getElementById("desktop").style.display="block";
+
+gate.classList.add("open");
+
+setTimeout(()=>{
+gate.style.display="none";
+},1200);
+}
+
+/* LOCK */
+function startLock(){
+clearInterval(lockInterval);
+document.getElementById("lockscreen").classList.remove("active");
+document.getElementById("lockedScreen").classList.add("active");
+
+document.getElementById("recoveryBox").style.display="block";
+
+lockInterval=setInterval(()=>{
+let r=lockUntil-Date.now();
+if(r<=0){unlock();return;}
+document.getElementById("timer").innerText=Math.ceil(r/1000)+"s";
+},1000);
+}
+
+function unlock(){
+clearInterval(lockInterval);
+lockUntil=0;
+attempts=0;
+document.getElementById("lockedScreen").classList.remove("active");
+document.getElementById("lockscreen").classList.add("active");
+document.getElementById("recoveryBox").style.display="none";
+}
+
+/* RECOVERY */
+document.getElementById("recoveryPassword").addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+if(e.target.value===recoveryPassword){
+unlock();
+document.getElementById("overrideScreen").classList.add("active");
+setTimeout(()=>{
+document.getElementById("overrideScreen").classList.remove("active");
+},10000);
+}
+e.target.value="";
+}
+});
+
+/* APPS */
+function openApp(id){
+document.getElementById(id).style.display="block";
+}
+function closeApp(id){
+document.getElementById(id).style.display="none";
+}
+
+/* CLOCK */
+function updateClock(){
+let d=new Date();
+document.getElementById("clock").innerText=
+d.getHours().toString().padStart(2,"0")+":"+
+d.getMinutes().toString().padStart(2,"0");
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* ===== THEMES ===== */
+function setTheme(t){
+document.body.classList.remove("glass","darkglass","redbrick");
+document.body.classList.add(t);
+localStorage.setItem("theme",t);
+}
+
+window.onload=()=>{
+let t=localStorage.getItem("theme");
+if(t) document.body.classList.add(t);
+};
+
+</script>
+
+</body>
+</html>in
