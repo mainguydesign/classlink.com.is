@@ -2,9 +2,7 @@
 <html>
 <head>
 <title>History Project</title>
-
-<!-- ✅ FIXED favicon -->
-<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
 
 <style>
 body{
@@ -17,7 +15,7 @@ cursor:url("https://cdn-icons-png.flaticon.com/512/854/854878.png"),auto;
 }
 
 /* LOGIN */
-#login{
+#login,#locked{
 position:fixed;
 width:100%;
 height:100%;
@@ -25,75 +23,72 @@ display:flex;
 justify-content:center;
 align-items:center;
 flex-direction:column;
-background:black;
 }
-
-/* LOCK */
-#locked{
-display:none;
-position:fixed;
-width:100%;
-height:100%;
-background:darkred;
-color:white;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-}
+#login{background:black;}
+#locked{background:darkred;display:none;}
 
 /* DESKTOP */
-#desktop{
-display:none;
-padding:20px;
+#desktop{display:none;height:100vh;padding:20px;}
+
+/* TASKBAR */
+#taskbar{
+position:fixed;
+bottom:0;
+width:100%;
+height:40px;
+background:#000;
+display:flex;
+align-items:center;
+padding:5px;
 }
 
 /* ICON */
 .icon{
-display:inline-block;
 margin:10px;
 cursor:pointer;
+display:inline-block;
 position:relative;
 }
 
 /* WINDOWS */
 .window{
 position:absolute;
-top:120px;
-left:120px;
+top:100px;
+left:100px;
 width:500px;
 height:350px;
 background:#222;
-border:1px solid #555;
 display:none;
 resize:both;
 overflow:hidden;
+border:1px solid #555;
 }
 
-/* HEADER */
 .header{
 background:#333;
 padding:5px;
 cursor:grab;
 }
 
-/* CLOSE */
 .close{
 float:right;
 cursor:pointer;
 color:red;
 }
 
-/* GAME LIST */
-#gameList div{
+/* BROWSER */
+#browserBar{
+background:#111;
 padding:5px;
-cursor:pointer;
-color:lightblue;
+}
+#url{
+width:80%;
 }
 
 /* IFRAME */
 iframe{
 width:100%;
-height:100%;
+height:calc(100% - 60px);
 border:none;
 }
 
@@ -108,13 +103,11 @@ right:0;
 display:none;
 }
 
-/* PIN MENU */
 #pinMenu{
 position:absolute;
 background:#222;
-padding:5px;
 display:none;
-z-index:9999;
+padding:5px;
 }
 </style>
 </head>
@@ -137,6 +130,11 @@ z-index:9999;
 <!-- DESKTOP -->
 <div id="desktop">
 
+<div class="icon" data-app="browser" onclick="openApp('browser')" onmouseenter="hoverApp(event,this)">
+🌐 Browser
+<div class="pin-dot"></div>
+</div>
+
 <div class="icon" data-app="games" onclick="openApp('games')" onmouseenter="hoverApp(event,this)">
 🎮 Games
 <div class="pin-dot"></div>
@@ -149,30 +147,32 @@ z-index:9999;
 
 </div>
 
-<!-- GAME HUB -->
+<!-- TASKBAR -->
+<div id="taskbar"></div>
+
+<!-- BROWSER -->
+<div class="window" id="browser">
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
+Browser <span class="close" onclick="closeApp('browser')">X</span>
+</div>
+
+<div id="browserBar">
+<input id="url" placeholder="enter url">
+<button onclick="go()">Go</button>
+</div>
+
+<iframe id="web"></iframe>
+</div>
+
+<!-- GAMES -->
 <div class="window" id="games">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
 Games <span class="close" onclick="closeApp('games')">X</span>
 </div>
-<div id="gameList"></div>
-</div>
 
-<!-- GAME VIEWER -->
-<div class="window" id="viewer">
-<div class="header" onmousedown="dragStart(event,this.parentElement)">
-Game Viewer <span class="close" onclick="closeApp('viewer')">X</span>
-</div>
-
-<div id="viewerContent" style="width:100%;height:100%;">
-
-<iframe id="frame"></iframe>
-
-<div id="fallback" style="display:none;padding:10px;">
-⚠️ This site cannot open inside the app.<br><br>
-<button id="openExternal">Open in new tab</button>
-</div>
-
-</div>
+<div onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
+<div onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
+<div onclick="openGame('https://www.roblox.com')">Roblox</div>
 </div>
 
 <!-- SETTINGS -->
@@ -195,24 +195,21 @@ Pin app?<br>
 
 <script>
 
-/* PASSWORD SYSTEM */
+/* PASSWORD */
 const correct="superiorsiteowner";
 const recoveryPass="superiorlakeemerald";
-let attempts=0;
-let lockUntil=0;
+let attempts=0,lockUntil=0;
 
-pass.addEventListener("keydown",e=>{
+pass.onkeydown=e=>{
 if(e.key==="Enter"){
-
 if(Date.now()<lockUntil)return lock();
 
 if(pass.value===correct){
 login.style.display="none";
 desktop.style.display="block";
-renderGames();
 }else{
 attempts++;
-msg.textContent="Wrong ("+attempts+"/5)";
+msg.textContent="Wrong "+attempts;
 
 if(attempts>=5){
 lockUntil=Date.now()+600000;
@@ -221,35 +218,33 @@ lock();
 }
 pass.value="";
 }
-});
+};
 
-/* LOCK */
 function lock(){
 login.style.display="none";
 locked.style.display="flex";
 
-function tick(){
-let t=lockUntil-Date.now();
-if(t>0){
-timer.textContent=Math.ceil(t/1000)+"s";
-setTimeout(tick,1000);
+function t(){
+let r=lockUntil-Date.now();
+if(r>0){
+timer.textContent=Math.ceil(r/1000)+"s";
+setTimeout(t,1000);
 }else{
 locked.style.display="none";
 login.style.display="flex";
 attempts=0;
 }
 }
-tick();
+t();
 }
 
-/* RECOVERY */
-recovery.addEventListener("keydown",e=>{
+recovery.onkeydown=e=>{
 if(e.key==="Enter" && recovery.value===recoveryPass){
 lockUntil=0;
 locked.style.display="none";
 login.style.display="flex";
 }
-});
+};
 
 /* WINDOWS */
 let z=10;
@@ -257,9 +252,18 @@ function openApp(id){
 let w=document.getElementById(id);
 w.style.display="block";
 w.style.zIndex=++z;
+addTask(id);
 }
 function closeApp(id){
 document.getElementById(id).style.display="none";
+}
+
+/* TASKBAR */
+function addTask(id){
+let btn=document.createElement("button");
+btn.textContent=id;
+btn.onclick=()=>openApp(id);
+taskbar.appendChild(btn);
 }
 
 /* DRAG */
@@ -268,56 +272,25 @@ function dragStart(e,el){
 drag=el;
 ox=e.clientX-el.offsetLeft;
 oy=e.clientY-el.offsetTop;
-el.style.zIndex=++z;
 }
-document.addEventListener("mousemove",e=>{
+document.onmousemove=e=>{
 if(drag){
 drag.style.left=(e.clientX-ox)+"px";
 drag.style.top=(e.clientY-oy)+"px";
 }
-});
-document.addEventListener("mouseup",()=>drag=null);
+};
+document.onmouseup=()=>drag=null;
 
-/* GAMES */
-const games=[
-{name:"Minecraft Classic",url:"https://classic.minecraft.net"},
-{name:"2048",url:"https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html"},
-{name:"Quick Draw",url:"https://quickdraw.withgoogle.com"},
-{name:"Roblox (external)",url:"https://www.roblox.com"}
-];
-
-function renderGames(){
-gameList.innerHTML="";
-games.forEach(g=>{
-let div=document.createElement("div");
-div.textContent=g.name;
-div.onclick=()=>openGame(g.url);
-gameList.appendChild(div);
-});
+/* BROWSER */
+function go(){
+let u=url.value;
+if(!u.startsWith("http")) u="https://"+u;
+web.src=u;
 }
 
-/* OPEN GAME */
-function openGame(url){
-openApp("viewer");
-
-let frame=document.getElementById("frame");
-let fallback=document.getElementById("fallback");
-
-frame.style.display="block";
-fallback.style.display="none";
-
-frame.src=url;
-
-/* detect iframe block */
-setTimeout(()=>{
-try{
-if(frame.contentWindow.length===0) throw "blocked";
-}catch{
-frame.style.display="none";
-fallback.style.display="block";
-openExternal.onclick=()=>window.open(url,"_blank");
-}
-},2000);
+function openGame(u){
+openApp("browser");
+web.src=u;
 }
 
 /* THEMES */
@@ -327,29 +300,31 @@ if(t==="blue")document.body.style.background="#0a1a3a";
 if(t==="red")document.body.style.background="#3a0a0a";
 }
 
-/* PIN SYSTEM */
+/* PIN */
 let lastHover={},current=null;
-
 function hoverApp(e,el){
 let app=el.dataset.app;
 let now=Date.now();
 
-if(!lastHover[app]||now-lastHover[app]>10000){
+if(lastHover[app] && now-lastHover[app]<10000)return;
+
 current=app;
+lastHover[app]=now;
+
 pinMenu.style.display="block";
 pinMenu.style.left=e.pageX+"px";
 pinMenu.style.top=e.pageY+"px";
-lastHover[app]=now;
-}
+
+setTimeout(()=>pinMenu.style.display="none",2000);
 }
 
-function pin(val){
+function pin(v){
 let dot=document.querySelector(`[data-app="${current}"] .pin-dot`);
-dot.style.display=val?"block":"none";
+dot.style.display=v?"block":"none";
 pinMenu.style.display="none";
 }
 
-document.addEventListener("click",()=>pinMenu.style.display="none");
+document.onclick=()=>pinMenu.style.display="none";
 
 </script>
 
