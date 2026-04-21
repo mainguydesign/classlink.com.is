@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>History Project OS</title>
+<title>History Project OS v2.1</title>
 
-<!-- ⭐ FAVICON RESTORED -->
 <link id="favicon" rel="icon" href="">
 
 <style>
 body{
 margin:0;
 font-family:Arial;
-background:#000;
+background:#111;
 color:white;
 overflow:hidden;
 }
@@ -25,21 +24,16 @@ justify-content:center;
 align-items:center;
 flex-direction:column;
 }
-#login{background:black;}
-#locked{background:darkred;display:none;}
+#login{background:#000;}
+#locked{background:#300;display:none;}
 
 /* DESKTOP */
-#desktop{
-display:none;
-height:100vh;
-padding:10px;
-}
+#desktop{display:none;height:100vh;padding:10px;}
 
 /* TASKBAR */
 #taskbar{
 position:fixed;
 bottom:0;
-left:0;
 width:100%;
 height:40px;
 background:#000;
@@ -51,14 +45,14 @@ padding:5px;
 
 /* ICONS */
 .icon{
-width:100px;
+width:110px;
 padding:10px;
 background:#222;
 margin:5px;
 display:inline-block;
 cursor:pointer;
 text-align:center;
-border-radius:5px;
+border-radius:6px;
 }
 
 /* WINDOWS */
@@ -67,7 +61,7 @@ position:absolute;
 top:120px;
 left:120px;
 width:520px;
-height:360px;
+height:380px;
 background:#222;
 display:none;
 border:1px solid #444;
@@ -82,22 +76,7 @@ cursor:grab;
 user-select:none;
 }
 
-.close{
-float:right;
-color:red;
-cursor:pointer;
-}
-
-/* AI BOX */
-#chatBox{
-height:240px;
-overflow:auto;
-background:#111;
-padding:5px;
-}
-
-/* INPUT */
-input,button{margin:3px;}
+.close{float:right;color:red;cursor:pointer;}
 
 iframe{
 width:100%;
@@ -105,22 +84,34 @@ height:250px;
 border:none;
 }
 
+#chatBox{
+height:240px;
+overflow:auto;
+background:#111;
+padding:5px;
+}
+
+.game{
+padding:5px;
+cursor:pointer;
+}
+.game:hover{background:#333}
+
+button,input{margin:3px;}
+
 </style>
 </head>
 
 <body>
 
-<!-- 🔐 LOGIN SCREEN -->
+<!-- 🔐 LOGIN -->
 <div id="login">
-<input id="pass" placeholder="Enter password">
+<input id="pass" placeholder="password">
 <div id="msg"></div>
 </div>
 
-<!-- 🔴 LOCK SCREEN -->
-<div id="locked">
-<h2>LOCKED OUT</h2>
-<input id="recovery" placeholder="recovery code">
-</div>
+<!-- 🔴 LOCK -->
+<div id="locked"></div>
 
 <!-- 🖥️ DESKTOP -->
 <div id="desktop">
@@ -132,7 +123,6 @@ border:none;
 
 </div>
 
-<!-- TASKBAR -->
 <div id="taskbar"></div>
 
 <!-- 🌐 BROWSER -->
@@ -143,20 +133,34 @@ Browser <span class="close" onclick="closeApp('browser')">X</span>
 
 <input id="url" placeholder="https://...">
 <button onclick="go()">Go</button>
-
 <iframe id="frame"></iframe>
 </div>
 
-<!-- 🎮 GAMES -->
+<!-- 🎮 GAMES (100+ STRUCTURE READY) -->
 <div class="window" id="games">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
-Games <span class="close" onclick="closeApp('games')">X</span>
+Game Hub <span class="close" onclick="closeApp('games')">X</span>
 </div>
 
-<div onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
-<div onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
-<div onclick="openGame('https://tetris.com/play-tetris')">Tetris</div>
+<div style="overflow:auto;height:320px">
 
+<h4>Classics</h4>
+<div class="game" onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
+<div class="game" onclick="openGame('https://tetris.com/play-tetris')">Tetris</div>
+<div class="game" onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
+
+<h4>Unblocked Hub Pack</h4>
+<div class="game" onclick="openGame('https://sites.google.com/view/drive-u-7-home/home')">Drive U7</div>
+<div class="game" onclick="openGame('https://sites.google.com/view/classroom6x/')">Classroom 6x</div>
+<div class="game" onclick="openGame('https://sites.google.com/view/unblocked-game76')">Game76</div>
+<div class="game" onclick="openGame('https://sites.google.com/view/newgengames/')">NewGen Games</div>
+
+<h4>Extra Links</h4>
+<div class="game" onclick="openGame('https://sites.google.com/site/unblockedgames24h/')">UG24h</div>
+<div class="game" onclick="openGame('https://sites.google.com/view/unblocked-games911/')">UG911</div>
+<div class="game" onclick="openGame('https://sites.google.com/site/unblockedgames500weeblycom/home')">UG500</div>
+
+</div>
 </div>
 
 <!-- ⚙️ SETTINGS -->
@@ -171,10 +175,10 @@ Settings <span class="close" onclick="closeApp('settings')">X</span>
 
 </div>
 
-<!-- 🤖 AI TAB (OFFLINE DEMO) -->
+<!-- 🤖 AI -->
 <div class="window" id="ai">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
-AI Chat <span class="close" onclick="closeApp('ai')">X</span>
+AI Assistant <span class="close" onclick="closeApp('ai')">X</span>
 </div>
 
 <div id="chatBox"></div>
@@ -184,30 +188,34 @@ AI Chat <span class="close" onclick="closeApp('ai')">X</span>
 
 <script>
 
-/* ================= LOGIN SYSTEM ================= */
+/* ================= LOGIN v2.1 ================= */
 
-let attempts = 0;
-const password = "admin123";
-const recovery = "recover123";
-const lockTime = 10000;
-let lockedUntil = 0;
+let attempts=0;
+const PASSWORD="admin";
+const RECOVERY="recover123";
+let lockUntil=0;
+let timer;
+
+if(localStorage.getItem("loggedIn")==="true"){
+login.style.display="none";
+desktop.style.display="block";
+}
 
 document.getElementById("pass").addEventListener("keydown",e=>{
 if(e.key==="Enter"){
-if(Date.now()<lockedUntil){
+
+if(Date.now()<lockUntil){
 showLock();
 return;
 }
 
-if(pass.value===password){
+if(e.target.value===PASSWORD){
 loginSuccess();
 }else{
 attempts++;
 msg.innerText="Wrong ("+attempts+")";
-
 if(attempts>=3){
-lockedUntil=Date.now()+lockTime;
-showLock();
+startLock();
 }
 }
 }
@@ -216,6 +224,14 @@ showLock();
 function loginSuccess(){
 login.style.display="none";
 desktop.style.display="block";
+localStorage.setItem("loggedIn","true");
+}
+
+/* LOCK */
+function startLock(){
+lockUntil=Date.now()+15000;
+showLock();
+startCountdown();
 }
 
 function showLock(){
@@ -223,13 +239,42 @@ login.style.display="none";
 locked.style.display="flex";
 }
 
-/* recovery */
-recovery.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-if(recovery.value===recovery){
+/* COUNTDOWN */
+function startCountdown(){
+clearInterval(timer);
+
+timer=setInterval(()=>{
+let left=Math.max(0,lockUntil-Date.now());
+
+locked.innerHTML=`
+<h2>LOCKED</h2>
+<p>${Math.ceil(left/1000)}s remaining</p>
+<input id="recovery" placeholder="recovery">
+<div id="recMsg"></div>
+`;
+
+if(left<=0){
+clearInterval(timer);
 locked.style.display="none";
 login.style.display="flex";
 attempts=0;
+}
+},1000);
+}
+
+/* RECOVERY */
+document.addEventListener("keydown",e=>{
+if(e.key==="Enter"&&document.getElementById("recovery")){
+let v=document.getElementById("recovery").value;
+let msg=document.getElementById("recMsg");
+
+if(v===RECOVERY){
+locked.style.display="none";
+login.style.display="flex";
+attempts=0;
+lockUntil=0;
+}else{
+msg.innerText="Wrong recovery";
 }
 }
 });
@@ -239,8 +284,9 @@ attempts=0;
 let z=10,drag=null,ox,oy;
 
 function openApp(id){
-document.getElementById(id).style.display="block";
-document.getElementById(id).style.zIndex=++z;
+let w=document.getElementById(id);
+w.style.display="block";
+w.style.zIndex=++z;
 addTask(id);
 }
 
@@ -257,7 +303,7 @@ b.onclick=()=>openApp(id);
 taskbar.appendChild(b);
 }
 
-/* DRAG FIX */
+/* DRAG */
 function dragStart(e,el){
 drag=el;
 ox=e.clientX-el.offsetLeft;
@@ -292,19 +338,16 @@ t==="blue"?"#0a1a3a":"#eee";
 document.body.style.color=(t==="light")?"black":"white";
 }
 
-/* AI (OFFLINE DEMO) */
+/* AI */
 function sendAI(){
 chatBox.innerHTML+="<div>You: "+chatInput.value+"</div>";
-chatBox.innerHTML+="<div>AI: This is a demo offline AI.</div>";
+chatBox.innerHTML+="<div>AI: Offline OS assistant active.</div>";
 chatInput.value="";
 }
 
-/* FAVICON RESTORED */
-function setFavicon(){
+/* FAVICON */
 let svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='white' d='M2 12l19-9-7 19-2-8-10-2z'/></svg>`;
 favicon.href="data:image/svg+xml,"+encodeURIComponent(svg);
-}
-setFavicon();
 
 </script>
 
