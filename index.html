@@ -12,6 +12,9 @@ font-family:Arial;
 background:#111;
 color:white;
 overflow:hidden;
+
+/* ✈️ cursor */
+cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M2 12l19-9-7 19-2-8-10-2z'/%3E%3C/svg%3E") 0 0, auto;
 }
 
 /* LOGIN */
@@ -32,7 +35,7 @@ height:100vh;
 padding:20px;
 }
 
-/* ICONS */
+/* ICON */
 .icon{
 width:90px;
 display:inline-block;
@@ -51,16 +54,15 @@ width:420px;
 background:#222;
 border:1px solid #444;
 display:none;
-z-index:10;
 }
 
 .window-header{
 background:#333;
 padding:6px;
 cursor:grab;
-user-select:none;
 }
 
+/* CLOSE */
 .close{
 float:right;
 cursor:pointer;
@@ -71,7 +73,6 @@ cursor:pointer;
 display:block;
 padding:5px;
 color:lightblue;
-text-decoration:none;
 }
 
 /* PIN DOT */
@@ -93,31 +94,8 @@ position:absolute;
 background:#222;
 border:1px solid #555;
 padding:6px;
-font-size:12px;
 display:none;
 z-index:9999;
-}
-
-.pin-btn{
-margin:2px;
-padding:3px 6px;
-cursor:pointer;
-background:#333;
-color:white;
-border:none;
-}
-
-/* TASKBAR */
-#taskbar{
-position:fixed;
-bottom:0;
-width:100%;
-height:40px;
-background:#1a1a1a;
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:0 10px;
 }
 </style>
 </head>
@@ -144,14 +122,14 @@ padding:0 10px;
 
 </div>
 
-<!-- GAME HUB -->
+<!-- GAME -->
 <div class="window" id="games">
 <div class="window-header" onmousedown="dragStart(event,this.parentElement)">
-🎮 Game Hub <span class="close" onclick="closeApp('games')">X</span>
+Game Hub <span class="close" onclick="closeApp('games')">X</span>
 </div>
 
 <div style="padding:10px;">
-<input id="search" placeholder="search games..." style="width:100%">
+<input id="search" placeholder="search..." style="width:100%">
 <div id="gameList"></div>
 </div>
 </div>
@@ -159,7 +137,7 @@ padding:0 10px;
 <!-- SETTINGS -->
 <div class="window" id="settings">
 <div class="window-header" onmousedown="dragStart(event,this.parentElement)">
-⚙️ Settings <span class="close" onclick="closeApp('settings')">X</span>
+Settings <span class="close" onclick="closeApp('settings')">X</span>
 </div>
 
 <div style="padding:10px;">
@@ -169,17 +147,12 @@ padding:0 10px;
 </div>
 </div>
 
-<!-- TASKBAR -->
-<div id="taskbar">
-<div>Start</div>
-<div>History Project</div>
-</div>
-
 <!-- PIN MENU -->
 <div id="pinMenu" class="pin-menu">
-<div>Pin app?</div>
-<button class="pin-btn" onclick="confirmPin(true)">Yes</button>
-<button class="pin-btn" onclick="confirmPin(false)">No</button>
+Pin app?
+<br>
+<button onclick="confirmPin(true)">Yes</button>
+<button onclick="confirmPin(false)">No</button>
 </div>
 
 <script>
@@ -192,28 +165,29 @@ start();
 });
 
 function start(){
-document.getElementById("login").style.display="none";
-document.getElementById("desktop").style.display="block";
-
-updatePins();
+login.style.display="none";
+desktop.style.display="block";
 renderGames();
+updatePins();
 }
 
-/* APPS */
+/* WINDOWS */
+let z=10;
+
 function openApp(id){
 let w=document.getElementById(id);
 w.style.display="block";
 w.style.zIndex=++z;
 }
+
 function closeApp(id){
 document.getElementById(id).style.display="none";
 }
 
-/* GAME DATA */
+/* GAMES */
 const games=[
 {name:"Minecraft",url:"#"},
 {name:"Roblox",url:"#"},
-{name:"Oregon Trail",url:"#"},
 {name:"Terraria",url:"#"},
 {name:"FNAF",url:"#"}
 ];
@@ -221,32 +195,29 @@ const games=[
 function renderGames(){
 let box=document.getElementById("gameList");
 let s=document.getElementById("search").value.toLowerCase();
-
 box.innerHTML="";
 
 games.filter(g=>g.name.toLowerCase().includes(s))
 .forEach(g=>{
 let a=document.createElement("a");
+a.textContent=g.name;
 a.href=g.url;
 a.target="_blank";
-a.textContent=g.name;
 box.appendChild(a);
 });
 }
 
-/* SEARCH */
 document.addEventListener("input",e=>{
 if(e.target.id==="search")renderGames();
 });
 
-/* DRAG FIX */
+/* DRAG */
 let drag=null,ox=0,oy=0;
 
 function dragStart(e,el){
 drag=el;
 ox=e.clientX-el.offsetLeft;
 oy=e.clientY-el.offsetTop;
-el.style.position="absolute";
 el.style.zIndex=++z;
 }
 
@@ -265,11 +236,9 @@ if(t==="blue")document.body.style.background="#0a1a3a";
 if(t==="red")document.body.style.background="#3a0a0a";
 }
 
-/* PIN SYSTEM */
+/* PIN SYSTEM (FIXED) */
 let pinned=JSON.parse(localStorage.getItem("pinned"))||{};
 let current=null;
-
-/* 🔥 COOLDOWN SYSTEM (10s hover delay) */
 let hoverCooldown={};
 
 function hoverApp(e,el){
@@ -293,9 +262,9 @@ if(!current)return;
 
 pinned[current]=val;
 localStorage.setItem("pinned",JSON.stringify(pinned));
-
 updatePins();
-document.getElementById("pinMenu").style.display="none";
+
+pinMenu.style.display="none";
 }
 
 function togglePin(e,app){
@@ -305,21 +274,19 @@ localStorage.setItem("pinned",JSON.stringify(pinned));
 updatePins();
 }
 
-/* UPDATE DOTS */
 function updatePins(){
 document.querySelectorAll(".icon").forEach(i=>{
 let app=i.dataset.app;
 let dot=i.querySelector(".pin-dot");
-dot.style.display=pinned[app]?"block":"none";
+
+/* ✅ FIXED LINE */
+dot.style.display = pinned[app] ? "block" : "none";
 });
 }
 
-/* CLOSE MENU */
 document.addEventListener("click",()=>{
-document.getElementById("pinMenu").style.display="none";
+pinMenu.style.display="none";
 });
-
-let z=10;
 
 </script>
 
