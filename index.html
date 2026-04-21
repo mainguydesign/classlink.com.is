@@ -24,6 +24,7 @@ justify-content:center;
 align-items:center;
 flex-direction:column;
 }
+
 #login{background:#000;}
 #locked{background:#300;display:none;}
 
@@ -149,13 +150,13 @@ Game Hub <span class="close" onclick="closeApp('games')">X</span>
 <div class="game" onclick="openGame('https://tetris.com/play-tetris')">Tetris</div>
 <div class="game" onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
 
-<h4>Unblocked Packs</h4>
+<h4>Unblocked</h4>
 <div class="game" onclick="openGame('https://sites.google.com/view/drive-u-7-home/home')">Drive U7</div>
 <div class="game" onclick="openGame('https://sites.google.com/view/classroom6x/')">Classroom 6x</div>
 <div class="game" onclick="openGame('https://sites.google.com/view/unblocked-game76')">Game76</div>
 <div class="game" onclick="openGame('https://sites.google.com/view/newgengames/')">NewGen Games</div>
 
-<h4>More Links</h4>
+<h4>More</h4>
 <div class="game" onclick="openGame('https://sites.google.com/site/unblockedgames24h/')">UG24h</div>
 <div class="game" onclick="openGame('https://sites.google.com/view/unblocked-games911/')">UG911</div>
 <div class="game" onclick="openGame('https://sites.google.com/site/unblockedgames500weeblycom/home')">UG500</div>
@@ -188,49 +189,54 @@ AI Assistant <span class="close" onclick="closeApp('ai')">X</span>
 
 <script>
 
-/* ================= LOGIN SYSTEM ================= */
+/* ================= LOGIN FIXED ================= */
 
-let attempts=0;
+let attempts = 0;
 
-const PASSWORD="superiorsiteowner";
-const RECOVERY="recover123";
+const PASSWORD = "superiorsiteowner";
+const RECOVERY = "recover123";
 
-let lockUntil=0;
-let timer;
+let lockUntil = 0;
+let timer = null;
 
-/* auto login */
+const loginScreen = document.getElementById("login");
+const lockedScreen = document.getElementById("locked");
+const desktop = document.getElementById("desktop");
+const msg = document.getElementById("msg");
+const pass = document.getElementById("pass");
+
 if(localStorage.getItem("loggedIn")==="true"){
-login.style.display="none";
+loginScreen.style.display="none";
 desktop.style.display="block";
 }
 
-document.getElementById("pass").addEventListener("keydown",e=>{
-if(e.key==="Enter"){
+pass.addEventListener("keydown",e=>{
+if(e.key!=="Enter")return;
 
 if(Date.now()<lockUntil){
 showLock();
 return;
 }
 
-if(e.target.value===PASSWORD){
+if(pass.value.trim()===PASSWORD){
 loginSuccess();
 }else{
 attempts++;
 msg.innerText="Wrong ("+attempts+")";
+
 if(attempts>=3){
 startLock();
-}
 }
 }
 });
 
 function loginSuccess(){
-login.style.display="none";
+loginScreen.style.display="none";
 desktop.style.display="block";
 localStorage.setItem("loggedIn","true");
 }
 
-/* LOCK SYSTEM */
+/* LOCK */
 function startLock(){
 lockUntil=Date.now()+15000;
 showLock();
@@ -238,8 +244,8 @@ startCountdown();
 }
 
 function showLock(){
-login.style.display="none";
-locked.style.display="flex";
+loginScreen.style.display="none";
+lockedScreen.style.display="flex";
 }
 
 /* COUNTDOWN */
@@ -249,17 +255,17 @@ clearInterval(timer);
 timer=setInterval(()=>{
 let left=Math.max(0,lockUntil-Date.now());
 
-locked.innerHTML=`
+lockedScreen.innerHTML=`
 <h2>LOCKED</h2>
 <p>${Math.ceil(left/1000)}s remaining</p>
-<input id="recovery" placeholder="recovery">
+<input id="rec">
 <div id="recMsg"></div>
 `;
 
 if(left<=0){
 clearInterval(timer);
-locked.style.display="none";
-login.style.display="flex";
+lockedScreen.style.display="none";
+loginScreen.style.display="flex";
 attempts=0;
 }
 },1000);
@@ -267,18 +273,21 @@ attempts=0;
 
 /* RECOVERY */
 document.addEventListener("keydown",e=>{
-if(e.key==="Enter"&&document.getElementById("recovery")){
-let v=document.getElementById("recovery").value;
-let msg=document.getElementById("recMsg");
+if(e.key!=="Enter")return;
 
-if(v===RECOVERY){
-locked.style.display="none";
-login.style.display="flex";
+let r=document.getElementById("rec");
+if(!r)return;
+
+let m=document.getElementById("recMsg");
+
+if(r.value.trim()===RECOVERY){
+lockedScreen.style.display="none";
+loginScreen.style.display="flex";
 attempts=0;
 lockUntil=0;
+msg.innerText="Recovered";
 }else{
-msg.innerText="Wrong recovery";
-}
+m.innerText="Wrong recovery";
 }
 });
 
@@ -344,7 +353,7 @@ document.body.style.color=(t==="light")?"black":"white";
 /* AI */
 function sendAI(){
 chatBox.innerHTML+="<div>You: "+chatInput.value+"</div>";
-chatBox.innerHTML+="<div>AI: Offline assistant active.</div>";
+chatBox.innerHTML+="<div>AI: Offline mode active.</div>";
 chatInput.value="";
 }
 
