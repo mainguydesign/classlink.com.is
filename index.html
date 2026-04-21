@@ -2,7 +2,9 @@
 <html>
 <head>
 <title>History Project</title>
-<link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/3/3c/Paper_plane.svg">
+
+<!-- ✅ FIXED favicon -->
+<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
 
 <style>
 body{
@@ -11,7 +13,7 @@ font-family:Arial;
 background:#111;
 color:white;
 overflow:hidden;
-cursor:url("https://upload.wikimedia.org/wikipedia/commons/3/3c/Paper_plane.svg"),auto;
+cursor:url("https://cdn-icons-png.flaticon.com/512/854/854878.png"),auto;
 }
 
 /* LOGIN */
@@ -74,7 +76,7 @@ padding:5px;
 cursor:grab;
 }
 
-/* CLOSE BUTTON */
+/* CLOSE */
 .close{
 float:right;
 cursor:pointer;
@@ -91,7 +93,7 @@ color:lightblue;
 /* IFRAME */
 iframe{
 width:100%;
-height:calc(100% - 30px);
+height:100%;
 border:none;
 }
 
@@ -112,6 +114,7 @@ position:absolute;
 background:#222;
 padding:5px;
 display:none;
+z-index:9999;
 }
 </style>
 </head>
@@ -157,9 +160,19 @@ Games <span class="close" onclick="closeApp('games')">X</span>
 <!-- GAME VIEWER -->
 <div class="window" id="viewer">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
-Game <span class="close" onclick="closeApp('viewer')">X</span>
+Game Viewer <span class="close" onclick="closeApp('viewer')">X</span>
 </div>
+
+<div id="viewerContent" style="width:100%;height:100%;">
+
 <iframe id="frame"></iframe>
+
+<div id="fallback" style="display:none;padding:10px;">
+⚠️ This site cannot open inside the app.<br><br>
+<button id="openExternal">Open in new tab</button>
+</div>
+
+</div>
 </div>
 
 <!-- SETTINGS -->
@@ -175,15 +188,14 @@ Settings <span class="close" onclick="closeApp('settings')">X</span>
 
 <!-- PIN MENU -->
 <div id="pinMenu">
-Pin app?
-<br>
+Pin app?<br>
 <button onclick="pin(true)">Yes</button>
 <button onclick="pin(false)">No</button>
 </div>
 
 <script>
 
-/* PASSWORD */
+/* PASSWORD SYSTEM */
 const correct="superiorsiteowner";
 const recoveryPass="superiorlakeemerald";
 let attempts=0;
@@ -201,6 +213,7 @@ renderGames();
 }else{
 attempts++;
 msg.textContent="Wrong ("+attempts+"/5)";
+
 if(attempts>=5){
 lockUntil=Date.now()+600000;
 lock();
@@ -265,11 +278,12 @@ drag.style.top=(e.clientY-oy)+"px";
 });
 document.addEventListener("mouseup",()=>drag=null);
 
-/* GAMES → OPEN IN IFRAME */
+/* GAMES */
 const games=[
 {name:"Minecraft Classic",url:"https://classic.minecraft.net"},
-{name:"Google Quick Draw",url:"https://quickdraw.withgoogle.com"},
-{name:"2048",url:"https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html"}
+{name:"2048",url:"https://specials.manoramaonline.com/Mobile/2022/2048-game/index.html"},
+{name:"Quick Draw",url:"https://quickdraw.withgoogle.com"},
+{name:"Roblox (external)",url:"https://www.roblox.com"}
 ];
 
 function renderGames(){
@@ -277,12 +291,33 @@ gameList.innerHTML="";
 games.forEach(g=>{
 let div=document.createElement("div");
 div.textContent=g.name;
-div.onclick=()=>{
-frame.src=g.url;
-openApp("viewer");
-};
+div.onclick=()=>openGame(g.url);
 gameList.appendChild(div);
 });
+}
+
+/* OPEN GAME */
+function openGame(url){
+openApp("viewer");
+
+let frame=document.getElementById("frame");
+let fallback=document.getElementById("fallback");
+
+frame.style.display="block";
+fallback.style.display="none";
+
+frame.src=url;
+
+/* detect iframe block */
+setTimeout(()=>{
+try{
+if(frame.contentWindow.length===0) throw "blocked";
+}catch{
+frame.style.display="none";
+fallback.style.display="block";
+openExternal.onclick=()=>window.open(url,"_blank");
+}
+},2000);
 }
 
 /* THEMES */
