@@ -178,10 +178,14 @@ const pass = document.getElementById("pass");
 const msg = document.getElementById("msg");
 const taskbar = document.getElementById("taskbar");
 
-/* ALWAYS SHOW LOGIN ON REFRESH */
-login.style.display = "flex";
-desktop.style.display = "none";
+/* 🔥 FORCE LOGIN EVERY TIME PAGE LOADS */
+window.addEventListener("DOMContentLoaded", () => {
+    login.style.display = "flex";
+    desktop.style.display = "none";
+    locked.style.display = "none";
+});
 
+/* LOGIN INPUT */
 pass.onkeydown = e=>{
 if(e.key!=="Enter")return;
 
@@ -279,7 +283,7 @@ t==="blue" ? "#0a1a3a" :
 "#eee";
 }
 
-/* AI (placeholder) */
+/* AI placeholder */
 function send(){
 let input=document.getElementById("input");
 let chat=document.getElementById("chat");
