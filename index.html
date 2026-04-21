@@ -3,31 +3,36 @@
 <head>
 <title>History Project OS</title>
 
+<!-- ⭐ FAVICON RESTORED -->
+<link id="favicon" rel="icon" href="">
+
 <style>
 body{
 margin:0;
 font-family:Arial;
-background:#111;
+background:#000;
 color:white;
 overflow:hidden;
 }
 
+/* LOGIN */
+#login,#locked{
+position:fixed;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+#login{background:black;}
+#locked{background:darkred;display:none;}
+
 /* DESKTOP */
 #desktop{
+display:none;
 height:100vh;
 padding:10px;
-}
-
-/* ICONS */
-.icon{
-width:100px;
-padding:10px;
-background:#222;
-margin:5px;
-display:inline-block;
-cursor:pointer;
-border-radius:5px;
-text-align:center;
 }
 
 /* TASKBAR */
@@ -44,11 +49,23 @@ gap:5px;
 padding:5px;
 }
 
+/* ICONS */
+.icon{
+width:100px;
+padding:10px;
+background:#222;
+margin:5px;
+display:inline-block;
+cursor:pointer;
+text-align:center;
+border-radius:5px;
+}
+
 /* WINDOWS */
 .window{
 position:absolute;
-top:100px;
-left:100px;
+top:120px;
+left:120px;
 width:520px;
 height:360px;
 background:#222;
@@ -71,71 +88,78 @@ color:red;
 cursor:pointer;
 }
 
-/* GAME LIST */
-.game{
+/* AI BOX */
+#chatBox{
+height:240px;
+overflow:auto;
+background:#111;
 padding:5px;
-cursor:pointer;
 }
-.game:hover{background:#333}
 
-/* IFRAME */
+/* INPUT */
+input,button{margin:3px;}
+
 iframe{
 width:100%;
 height:250px;
 border:none;
 }
 
-/* SETTINGS BUTTONS */
-button{margin:3px;}
-
 </style>
 </head>
 
 <body>
 
-<!-- DESKTOP -->
+<!-- 🔐 LOGIN SCREEN -->
+<div id="login">
+<input id="pass" placeholder="Enter password">
+<div id="msg"></div>
+</div>
+
+<!-- 🔴 LOCK SCREEN -->
+<div id="locked">
+<h2>LOCKED OUT</h2>
+<input id="recovery" placeholder="recovery code">
+</div>
+
+<!-- 🖥️ DESKTOP -->
 <div id="desktop">
 
 <div class="icon" onclick="openApp('browser')">🌐 Browser</div>
 <div class="icon" onclick="openApp('games')">🎮 Games</div>
 <div class="icon" onclick="openApp('settings')">⚙️ Settings</div>
+<div class="icon" onclick="openApp('ai')">🤖 AI</div>
 
 </div>
 
 <!-- TASKBAR -->
 <div id="taskbar"></div>
 
-<!-- BROWSER -->
+<!-- 🌐 BROWSER -->
 <div class="window" id="browser">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
 Browser <span class="close" onclick="closeApp('browser')">X</span>
 </div>
 
-<input id="url" placeholder="https://..." style="width:70%">
+<input id="url" placeholder="https://...">
 <button onclick="go()">Go</button>
 
 <iframe id="frame"></iframe>
 </div>
 
-<!-- GAMES -->
+<!-- 🎮 GAMES -->
 <div class="window" id="games">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
 Games <span class="close" onclick="closeApp('games')">X</span>
 </div>
 
-<div class="game" onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
-<div class="game" onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
-<div class="game" onclick="openGame('https://tetris.com/play-tetris')">Tetris</div>
-
-<hr>
-
-<div class="game" onclick="openGame('https://sites.google.com/view/drive-u-7-home/home')">Unblocked Hub 1</div>
-<div class="game" onclick="openGame('https://sites.google.com/view/classroom6x/')">Classroom 6x</div>
-<div class="game" onclick="openGame('https://sites.google.com/view/unblocked-game76')">Game 76</div>
+<div onclick="openGame('https://classic.minecraft.net')">Minecraft</div>
+<div onclick="openGame('https://quickdraw.withgoogle.com')">Quick Draw</div>
+<div onclick="openGame('https://tetris.com/play-tetris')">Tetris</div>
 
 </div>
 
-<!-- SETTINGS -->
+<!-- ⚙️ SETTINGS -->
 <div class="window" id="settings">
 <div class="header" onmousedown="dragStart(event,this.parentElement)">
 Settings <span class="close" onclick="closeApp('settings')">X</span>
@@ -143,19 +167,80 @@ Settings <span class="close" onclick="closeApp('settings')">X</span>
 
 <button onclick="theme('dark')">Dark</button>
 <button onclick="theme('blue')">Blue</button>
-<button onclick="theme('white')">Light</button>
+<button onclick="theme('light')">Light</button>
 
+</div>
+
+<!-- 🤖 AI TAB (OFFLINE DEMO) -->
+<div class="window" id="ai">
+<div class="header" onmousedown="dragStart(event,this.parentElement)">
+AI Chat <span class="close" onclick="closeApp('ai')">X</span>
+</div>
+
+<div id="chatBox"></div>
+<input id="chatInput">
+<button onclick="sendAI()">Send</button>
 </div>
 
 <script>
 
-/* WINDOW SYSTEM */
+/* ================= LOGIN SYSTEM ================= */
+
+let attempts = 0;
+const password = "admin123";
+const recovery = "recover123";
+const lockTime = 10000;
+let lockedUntil = 0;
+
+document.getElementById("pass").addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+if(Date.now()<lockedUntil){
+showLock();
+return;
+}
+
+if(pass.value===password){
+loginSuccess();
+}else{
+attempts++;
+msg.innerText="Wrong ("+attempts+")";
+
+if(attempts>=3){
+lockedUntil=Date.now()+lockTime;
+showLock();
+}
+}
+}
+});
+
+function loginSuccess(){
+login.style.display="none";
+desktop.style.display="block";
+}
+
+function showLock(){
+login.style.display="none";
+locked.style.display="flex";
+}
+
+/* recovery */
+recovery.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+if(recovery.value===recovery){
+locked.style.display="none";
+login.style.display="flex";
+attempts=0;
+}
+}
+});
+
+/* ================= WINDOWS ================= */
+
 let z=10,drag=null,ox,oy;
 
 function openApp(id){
-let w=document.getElementById(id);
-w.style.display="block";
-w.style.zIndex=++z;
+document.getElementById(id).style.display="block";
+document.getElementById(id).style.zIndex=++z;
 addTask(id);
 }
 
@@ -172,7 +257,7 @@ b.onclick=()=>openApp(id);
 taskbar.appendChild(b);
 }
 
-/* DRAG FIXED */
+/* DRAG FIX */
 function dragStart(e,el){
 drag=el;
 ox=e.clientX-el.offsetLeft;
@@ -193,19 +278,33 @@ function go(){
 frame.src=url.value;
 }
 
-function openGame(url){
+function openGame(u){
 openApp("browser");
-frame.src=url;
+frame.src=u;
 }
 
-/* THEMES */
+/* THEME */
 function theme(t){
-document.body.style.background =
+document.body.style.background=
 t==="dark"?"#111":
 t==="blue"?"#0a1a3a":"#eee";
 
-document.body.style.color=(t==="white")?"black":"white";
+document.body.style.color=(t==="light")?"black":"white";
 }
+
+/* AI (OFFLINE DEMO) */
+function sendAI(){
+chatBox.innerHTML+="<div>You: "+chatInput.value+"</div>";
+chatBox.innerHTML+="<div>AI: This is a demo offline AI.</div>";
+chatInput.value="";
+}
+
+/* FAVICON RESTORED */
+function setFavicon(){
+let svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='white' d='M2 12l19-9-7 19-2-8-10-2z'/></svg>`;
+favicon.href="data:image/svg+xml,"+encodeURIComponent(svg);
+}
+setFavicon();
 
 </script>
 
