@@ -176,6 +176,11 @@ const locked = document.getElementById("locked");
 const desktop = document.getElementById("desktop");
 const pass = document.getElementById("pass");
 const msg = document.getElementById("msg");
+const taskbar = document.getElementById("taskbar");
+
+/* ALWAYS SHOW LOGIN ON REFRESH */
+login.style.display = "flex";
+desktop.style.display = "none";
 
 pass.onkeydown = e=>{
 if(e.key!=="Enter")return;
@@ -187,18 +192,12 @@ showLock();return;
 if(pass.value===PASSWORD){
 login.style.display="none";
 desktop.style.display="block";
-localStorage.setItem("ok","1");
 }else{
 attempts++;
 msg.innerText="Wrong "+attempts+"/3";
 if(attempts>=3)lock();
 }
 };
-
-if(localStorage.getItem("ok")==="1"){
-login.style.display="none";
-desktop.style.display="block";
-}
 
 /* LOCK */
 function lock(){
@@ -274,22 +273,22 @@ frame.src=u;
 
 /* THEME */
 function theme(t){
-document.body.style.background=
-t==="dark"?"#111":
-t==="blue"?"#0a1a3a":"#eee";
-
-document.body.style.color=t==="light"?"black":"white";
+document.body.style.background =
+t==="dark" ? "#111" :
+t==="blue" ? "#0a1a3a" :
+"#eee";
 }
 
-/* AI */
+/* AI (placeholder) */
 function send(){
-chat.innerHTML+="You: "+input.value+"<br>";
-chat.innerHTML+="AI: offline demo<br>";
+let input=document.getElementById("input");
+let chat=document.getElementById("chat");
+
+chat.innerHTML += "<div>You: "+input.value+"</div>";
+chat.innerHTML += "<div>AI: (not connected yet)</div>";
+
 input.value="";
 }
-
-/* FAVICON */
-favicon.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='20'>🖥️</text></svg>";
 
 </script>
 
